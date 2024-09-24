@@ -161,6 +161,7 @@ for srv in range(len(SCS_IDS)):
     elif scs_error != 0:
         print(f"Servo {scs_id} Set Speed error: {packetHandler.getRxPacketError(scs_error)}")
 
+print(f"Make sure Servo Home is set correctly: {servo_home}")
 #set_servo_home()
 show_servo_position()
 print("Ready for the follower arm to follow the leader arm.")

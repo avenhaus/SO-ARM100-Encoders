@@ -19,6 +19,8 @@ https://www.aliexpress.com/w/wholesale-MT6701.html
 
 Small Big PCB
 
+![MT6701 Comparison](./Images/Servo_Comparison.jpg)
+
 ### 3D Printed Servo Housing
 
 
