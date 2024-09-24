@@ -45,12 +45,16 @@ typedef struct {
 encoder_data_t data[ENCODER_COUNT] = {0};
 float home_angle[ENCODER_COUNT] = {0};
 
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+#define HAS_RGB_LED 1
+#endif
+
 /***********************************************************\
  * Initialization Code
 \***********************************************************/
 
 void setup() {
-#ifdef CONFIG_IDF_TARGET_ESP32S3
+#ifdef HAS_RGB_LED
   // There is currently a bug in the ESP32-S3 neopixelWrite() code. This will produce the 
   // following errors and the RGB LED will not light up.:
   //  E (19) rmt: rmt_set_gpio(526): RMT GPIO ERROR
@@ -79,8 +83,14 @@ void setup() {
       if (i < ENCODER_COUNT - 1) { DEBUG_print(FST(", ")); }
     }
     DEBUG_println();
+#ifdef HAS_RGB_LED
+    neopixelWrite(RGB_BUILTIN, 0, 10, 0);
+#endif
   } else {
     DEBUG_println(FST("# No valid EEPROM data found"));
+#ifdef HAS_RGB_LED
+    neopixelWrite(RGB_BUILTIN, 10, 10, 0);
+#endif
   }
   EEPROM.end();
 
@@ -136,7 +146,7 @@ void loop() {
   if (change || ALWAYS_SEND) {
     DEBUG_printf(FST("%d, "), start);
     for (int i = 0; i < ENCODER_COUNT; i++) {
-      float angle = data[i].angle - home_angle[i];
+      float angle = home_angle[i] - data[i].angle;
       if (angle < 0) { angle += 360.0; }
       if (angle > 180.0) { angle -= 360.0; }
       //if (angle < -360.0) { angle += 360.0; }

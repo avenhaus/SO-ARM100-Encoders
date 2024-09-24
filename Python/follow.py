@@ -23,10 +23,12 @@ ADDR_SCS_PRESENT_POSITION  = 56
 # Default setting
 SCS_IDS                     = [1, 2, 3, 4, 5, 6] # SCServo IDs
 BAUDRATE                    = 1000000           # SCServo default baudrate : 1000000
-DEVICENAME                  = 'COM9'            # Servo Port: Check which port is being used on your controller
+DEVICENAME                  = 'COM3'            # Servo Port: Check which port is being used on your controller
                                                 # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
 
-ENCODER_PORT                = "COM7"            # Port of the magnetic encoder controller
+ENCODER_PORT                = "COM4"            # Port of the magnetic encoder controller
+
+REVERSE = [1, 1, -1, -1, -1, -1]          # Reverse direction of the servos
 
 SCS_MAXIMUM_POSITION_VALUE  = 4095        # Servo maximum position value (STS3215: 4095, SCS225: 1023)
 SCS_MOVING_STATUS_THRESHOLD = 20          # SCServo moving status threshold
@@ -34,7 +36,7 @@ SCS_MOVING_SPEED            = 0           # SCServo moving speed
 SCS_MOVING_ACC              = 0           # SCServo moving acc
 protocol_end                = 0           # SCServo byte order end(STS/SMS=0, SCS=1) 
 
-servo_home = []
+servo_home = [878, 2071, 2046, 918, 1943, 1990]
 
 def read_encoder_line(port):
     if port.in_waiting == 0:
@@ -93,6 +95,16 @@ def set_servo_home():
         servo_home.append(pos)
     print(f"Servo Home: {servo_home}")
 
+
+def show_servo_position():
+    servo_pos = []
+    for srv in range(len(SCS_IDS)):
+        scs_id = SCS_IDS[srv]
+        pos, speed = get_current_position(scs_id)
+        servo_pos.append(pos)
+    print(f"Current arm position: {servo_pos}")
+
+
 # Open serial port of the magnetic encoder controller
 encoder = serial.Serial(
             port=ENCODER_PORT,
@@ -120,14 +132,14 @@ packetHandler = PacketHandler(protocol_end)
     
 # Open Servo port
 if portHandler.openPort():
-    print("Succeeded to open the port")
+    print("Succeeded to open the servo port")
 else:
     print("Failed to open the port")
     quit()
 
 # Set port baudrate
 if portHandler.setBaudRate(BAUDRATE):
-    print("Succeeded to change the baudrate")
+    print("Succeeded to change the servo baudrate")
 else:
     print("Failed to change the baudrate")
     quit()
@@ -149,7 +161,9 @@ for srv in range(len(SCS_IDS)):
     elif scs_error != 0:
         print(f"Servo {scs_id} Set Speed error: {packetHandler.getRxPacketError(scs_error)}")
 
-set_servo_home()
+#set_servo_home()
+show_servo_position()
+print("Ready for the follower arm to follow the leader arm.")
 
 while True:
     try:
@@ -160,7 +174,7 @@ while True:
             if angles:
                 for srv in range(len(SCS_IDS)):
                     scs_id = SCS_IDS[srv]
-                    pos = int(servo_home[srv] + (angles[srv] / 360.0) * SCS_MAXIMUM_POSITION_VALUE) % SCS_MAXIMUM_POSITION_VALUE
+                    pos = int(servo_home[srv] + (angles[srv] / 360.0) * SCS_MAXIMUM_POSITION_VALUE * REVERSE[srv]) % SCS_MAXIMUM_POSITION_VALUE
                     print (f"Servo {scs_id} Angle: {angles[srv]} Home:{servo_home[srv]} Position: {pos}")
                     set_goal_position(scs_id, pos)
 
