@@ -7,7 +7,7 @@
 import serial
 import sys
 
-ENCODER_PORT = "COM7"
+ENCODER_PORT = "COM4"
 
 def read_encoder_line(port):
     if port.in_waiting == 0:
@@ -53,7 +53,7 @@ while True:
     try:
         line = read_encoder_line(encoder)
         if line:
-            print(line)
+            # print(line)
             parse_encoder_line(line)
     except KeyboardInterrupt:
         encoder.close()

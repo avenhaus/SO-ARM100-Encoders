@@ -36,7 +36,8 @@ SCS_MOVING_SPEED            = 0           # SCServo moving speed
 SCS_MOVING_ACC              = 0           # SCServo moving acc
 protocol_end                = 0           # SCServo byte order end(STS/SMS=0, SCS=1) 
 
-servo_home = [878, 2071, 2046, 918, 1943, 1990]
+#servo_home = [878, 2071, 2046, 918, 1943, 1990]
+servo_home = [919, 2008, 2126, 1144, 1981, 2046]
 
 def read_encoder_line(port):
     if port.in_waiting == 0:
