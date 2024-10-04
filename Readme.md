@@ -1,7 +1,10 @@
 
 # <center>Magnetic Encoder Dummy Servo</center>
 
-<p align="center"><img src="./Images/Servo_Comparison.jpg" width="500"></p>
+<p align="center"><img src="./Images/Servo_Comparison.jpg" width="600"></p>
+
+<p align="center"><img src="./Images/Robot_Arms.jpg" width="400"></p>
+
 
 
 ## Summary
@@ -31,7 +34,7 @@ AliExpress offers several MT6701 breakout boards some of which can be purchased 
 <img src="./Images/MT6701_Small_Bottom.webp" width="200">
 <img src="./Images/MT6701_Small_Top.webp" width="200">
 
-The larger version only has the I2C pins on the header and must be modified to work with SSI. One trace needs to be cut, one pin lifted and connected to the header. It is also slightly too large, sticking out a bit in front of the servo. It can be made to work, but the smaller board is much easier to use and therefor recommended. However the smaller board does not come with magnets. They must be purchased separately. Only radial magnetized magnets can be used. Regular magnets are magnetized axially. 
+The larger version only has the I2C pins on the header and must be modified to work with SSI. One trace needs to be cut, one pin lifted and connected to the header. It is also slightly too large, sticking out a bit in front of the servo. It can be made to work, but the smaller board is much easier to use and therefor recommended. However the smaller board does not come with magnets. They must be purchased separately. Only radially magnetized magnets can be used. Normally disk magnets are magnetized axially. 
 
 
 [AliExp Radial Magnets](https://www.aliexpress.us/item/3256804628068823.html)
