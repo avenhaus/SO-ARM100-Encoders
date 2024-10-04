@@ -1,5 +1,5 @@
 
-# <center>Manetic Encoder Dummy Servo</center>
+# <center>Magnetic Encoder Dummy Servo</center>
 
 <p align="center"><img src="./Images/Servo_Comparison.jpg" width="500"></p>
 
@@ -20,8 +20,8 @@ The AS5600 is older, 12 bit and supports only I2C. Since the chip has only one h
 The MT6701 has 14 bit resolution and also supports a SSI interface, which is similar to SPI.
 
 AliExpress offers several MT6701 breakout boards some of which can be purchased in low quantities for less than $2 including magnet.
-[AliExp Radial MT6701](https://www.aliexpress.com/w/wholesale-MT6701.html)
 
+[AliExp MT6701](https://www.aliexpress.com/w/wholesale-MT6701.html)
 
 <img src="./Images/MT6701_Two_Versions.jpg" width="400">
 <p>
@@ -32,6 +32,8 @@ AliExpress offers several MT6701 breakout boards some of which can be purchased 
 <img src="./Images/MT6701_Small_Top.webp" width="200">
 
 The larger version only has the I2C pins on the header and must be modified to work with SSI. One trace needs to be cut, one pin lifted and connected to the header. It is also slightly too large, sticking out a bit in front of the servo. It can be made to work, but the smaller board is much easier to use and therefor recommended. However the smaller board does not come with magnets. They must be purchased separately. Only radial magnetized magnets can be used. Regular magnets are magnetized axially. 
+
+
 [AliExp Radial Magnets](https://www.aliexpress.us/item/3256804628068823.html)
 
 
@@ -44,6 +46,11 @@ The wrist and gripper need the horn to be held in place by the servo itself. For
 <img src="./Images/Dummy_Servo_Parts.jpg" width="400">
 
 <img src="./Images/Small_Encoder_Assembly_2.jpg" width="400">
+
+
+The [Dummy Servo](./Hardware) is 3D printed.
+<p align="center"><img src="./Images/3D_Model.png" width="400"></p>
+
 
 ## Software
 
