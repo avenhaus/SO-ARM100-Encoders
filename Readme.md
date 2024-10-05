@@ -51,6 +51,10 @@ The wrist and gripper need the horn to be held in place by the servo itself. For
 <img src="./Images/Small_Encoder_Assembly_2.jpg" width="400">
 
 
+**Big Board Alternative**
+<img src="./Images/Large_Encoder_1.jpg" width="400">
+
+
 The [Dummy Servo](./Hardware) is 3D printed.
 <p align="center"><img src="./Images/3D_Model.png" width="400"></p>
 
