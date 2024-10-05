@@ -34,7 +34,7 @@ AliExpress offers several MT6701 breakout boards some of which can be purchased 
 <img src="./Images/MT6701_Small_Bottom.webp" width="200">
 <img src="./Images/MT6701_Small_Top.webp" width="200">
 
-The larger version only has the I2C pins on the header and must be modified to work with SSI. One trace needs to be cut, one pin lifted and connected to the header. It is also slightly too large, sticking out a bit in front of the servo. It can be made to work, but the smaller board is much easier to use and therefor recommended. However the smaller board does not come with magnets. They must be purchased separately. Only radially magnetized magnets can be used. Normally disk magnets are magnetized axially. 
+The larger version only has the I2C pins on the header and must be modified to work with SSI. The trace to the middle pin of the header needs to be cut and IC pin 8 lifted and connected to that header pin instead. It is also slightly too large, sticking out a bit in front of the servo. It can be made to work, but the smaller board is much easier to use and therefor recommended. However the smaller board does not come with magnets. They must be purchased separately. Only radially magnetized magnets can be used. Normally disk magnets are magnetized axially. 
 
 
 [AliExp Radial Magnets](https://www.aliexpress.us/item/3256804628068823.html)
