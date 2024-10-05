@@ -52,6 +52,7 @@ The wrist and gripper need the horn to be held in place by the servo itself. For
 
 
 **Big Board Alternative**
+
 <img src="./Images/Large_Encoder_1.jpg" width="400">
 
 
