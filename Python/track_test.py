@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #
 # *********    Track Test     *********
-#
+# Find the track end and home the track servo
+# Then move to some positions relative to the track length
 
 import os
 from time import sleep
