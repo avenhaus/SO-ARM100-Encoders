@@ -1,0 +1,11 @@
+Id,Designator,Footprint,Quantity,Designation,Supplier and ref
+1,"R4,R5,R7,R6",R_0603_1608Metric_Pad0.98x0.95mm_HandSolder,4,10K,
+4,C1,CP_EIA-3216-18_Kemet-A_Pad1.58x1.35mm_HandSolder,1,47uF,
+5,"C2,C5,C3,C6,C4",C_0603_1608Metric_Pad1.08x0.95mm_HandSolder,5,100nF,
+6,"R1,R2",R_0603_1608Metric_Pad0.98x0.95mm_HandSolder,2,1K,
+7,U3,TSSOP-20_4.4x6.5mm_P0.65mm,1,GD32F130F4P6TR,
+8,U2,SO-8_3.9x4.9mm_P1.27mm,1,MT6701CT,
+9,R3,R_0603_1608Metric_Pad0.98x0.95mm_HandSolder,1,100,
+11,D1,LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder,1,LED,
+12,U1,SOT-23-3,1,XC6206PxxxMR,
+14,Q1,SOT-23,1,2N7002K,

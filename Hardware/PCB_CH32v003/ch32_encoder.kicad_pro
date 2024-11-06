@@ -433,7 +433,7 @@
     ]
   },
   "meta": {
-    "filename": "encoder.kicad_pro",
+    "filename": "ch32_encoder.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -468,7 +468,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "Manufacture/",
+      "plot": "ch32_encoder_v0.7/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",
