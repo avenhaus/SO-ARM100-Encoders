@@ -39,15 +39,17 @@ Monitor:
 #endif
 #include <EEPROM.h>
 
-#include "AS5600.h"
-#include "MT6701.h"
+// #include "MT6701.h"
+
+#include "i2c.h"
+#include "AS5600_NB.h"
 
 
 PROGMEM const char EMPTY_STRING[] =  "";
 PROGMEM const char NEW_LINE[] =  "\n";
 
 PROGMEM const char PROJECT_NAME[] = __PROJECT_NAME__;
-PROGMEM const char PROJECT_VERSION[] = __PROJECT_COMPILE__;
+PROGMEM const char PROJECT_VERSION[] = __PROJECT_VERSION__;
 PROGMEM const char COMPILE_DATE[] = __DATE__;
 PROGMEM const char COMPILE_TIME[] = __TIME__;
 
@@ -126,9 +128,10 @@ uint8_t rx_index = 0;
 uint32_t last_rx_ts = 0;
 uint8_t ignore = 0;  // Ignore this many RX bytes. (What we just sent out.)
 
+// MT6701 mt6701;
 
-MT6701 mt6701;
-AS5600 as5600;  
+I2C i2c0(0, SDA, SCL, 1000000);
+AS5600_NB as5600(i2c0, AS5600_DIR_PIN);  
 
 uint16_t old_angle = 0;
 int32_t rotations = 0;
@@ -136,7 +139,8 @@ int32_t position = 0;
 
 void debug_hex(const uint8_t* data, uint16_t len) {
   for (int i = 0; i < len; i++) {
-    DEBUG_printf(FST("%02X "), data[i]);
+    DEBUG_print(data[i], HEX);
+    DEBUG_print(FST(" "));
   }
 }
 
@@ -157,7 +161,7 @@ void save_eeprom() {
   EEPROM.end();
 #endif
 
-  DEBUG_printf(FST("# Saved data to EEPROM, magic: %04x\n"), eeprom_data.magic);
+  DEBUG_println(FST("# Saved data to EEPROM"));
 }
 
 
@@ -176,15 +180,17 @@ void write_cmd(uint8_t addr, uint8_t len, const uint8_t* data) {
   crc = ~crc; // Invert the bits.
 
   // Send the response.
+#ifdef COM
   COM.write(header, sizeof(header));
   COM.write(crc);
+#endif
   ignore = sizeof(header) + 1;
 
 #if SERIAL_DEBUG
   debug_hex(data, len);
   DEBUG_print(FST(" => "));
   debug_hex(header, sizeof(header));
-  DEBUG_printf(FST("%02X\n"), crc);
+  DEBUG_println(crc, HEX);
 #endif
 
 }
@@ -201,11 +207,13 @@ void read_cmd(uint8_t addr, uint8_t len) {
   for (int i = addr; i < addr+len; i++) {crc += reg_data[i]; }
   crc = ~crc; // Invert the bits.
 
+#ifdef COM
   // Send the response.
   COM.write(header, sizeof(header));
   COM.write(reg_data+addr, len);
   COM.write(crc);
   ignore = sizeof(header) + len + 1;
+#endif
 
 #if SERIAL_DEBUG and 0
   debug_hex(header, sizeof(header));
@@ -235,7 +243,10 @@ void execute_command() {
       {
         uint8_t addr = rx_buffer[PACKET_ADDR]; 
         uint8_t len = rx_buffer[PACKET_LENGTH]-3;
-        DEBUG_printf(FST("# Write Adr:%d Len:%d => "), addr, len);
+        DEBUG_print(FST("# Write Adr:"));
+        DEBUG_print(addr);
+        DEBUG_print(FST("Len:"));
+        DEBUG_println(len);
         bool save = false;
         if (addr == 55 && rx_buffer[PACKET_DATA] == 1 && reg.lock_flag == 0) {save = true;}
         write_cmd(addr, len, rx_buffer + PACKET_DATA);
@@ -261,7 +272,8 @@ void execute_command() {
       DEBUG_print(FST("# Bulk Read\n"));
       break;
     default:  
-      DEBUG_printf(FST("# Unknown instruction: %02X\n"), instruction);
+      DEBUG_print(FST("# Unknown instruction: "));
+      DEBUG_println(instruction);
       break;
   }
 }
@@ -303,31 +315,14 @@ void parse_rx_data(uint8_t c) {
       execute_command();
     }
     else { 
-      DEBUG_printf(FST("\n# Bad CRC: %02X, received: %02X\n"), crc, rx_buffer[rx_buffer[PACKET_LENGTH]+3]);
+      DEBUG_print(FST("\n# Bad CRC:"));
+      DEBUG_print(crc);
+      DEBUG_print(FST(", received: ")); 
+      DEBUG_println(rx_buffer[rx_buffer[PACKET_LENGTH]+3]);
     }
     rx_index = 0;
     return;
   }
-}
-
-
-/***********************************************************\
- * Get Encoder Angle
-\***********************************************************/
-uint16_t get_angle() {
-   uint16_t angle = 0;
-  if (as5600.isConnected()) {
-    angle = as5600.rawAngle();
-  } else {
-    // TODO: The C++ library does not expose the raw angle, only the float angle.
-	  // Use the C function mt6701_read_raw(handle, &angle_u16, field_status, button_pushed, track_loss);
-    // TODO: handle 14 bit instead of jus 12 bit.
-    angle = mt6701.angleRead() * (4096.0 / 360.0); 
-  }
-
-  int pc = reg.position_correction & 0x07FF;
-  if (reg.position_correction & 0x800) { pc = -pc; } // Bit 11 is the sign bit.
-  return (angle - pc) & 0x0FFF;
 }
 
 
@@ -342,7 +337,7 @@ void setup() {
 #if SERIAL_DEBUG
   LOGGER.begin(SERIAL_SPEED);
   delay(100);
-  DEBUG_printf(FST("\n\n# %s %s | %s | %s\n"), PROJECT_NAME, PROJECT_VERSION, COMPILE_DATE, COMPILE_TIME);
+  DEBUG_println(FST("\n\n# " __PROJECT_NAME__  " " __PROJECT_VERSION__ " " __DATE__ " " __TIME__));
 #endif
 
 #ifdef GD32F1
@@ -355,18 +350,21 @@ void setup() {
   EEPROM.end();
 #endif
   if (eeprom_data.magic == EEPROM_MAGIC) {
-    DEBUG_printf(FST("# Loaded EEPROM data. ID:%d\n"), reg.id);
+    DEBUG_print(FST("# Loaded EEPROM data. ID: "));
+    DEBUG_println(reg.id);
   } else {
 #if SERIAL_DEBUG
-    DEBUG_printf(FST("# Invalid EEPROM magic: %04X. Using default values.\n"), eeprom_data.magic);
-    DEBUG_printf(FST("# Size %d %d => "), sizeof(eeprom_data), EEPROM_SIZE); 
+    DEBUG_print(FST("# Invalid EEPROM magic: "));
+    DEBUG_print(eeprom_data.magic);
+    DEBUG_println(FST(". Using default values."));
+    // DEBUG_printf(FST("# Size %d %d => "), sizeof(eeprom_data), EEPROM_SIZE); 
     debug_hex((uint8_t*)&eeprom_data, sizeof(eeprom_data));
     DEBUG_println();
 #endif
     memcpy(&eeprom_data.registers, &default_data, sizeof(default_data));
   }
 
-
+#ifdef COM
 #ifdef GD32F1
   COM.begin(COM_SPEED, SERIAL_8N1);
   usart_halfduplex_enable(COM_UART);
@@ -375,19 +373,16 @@ void setup() {
 #ifdef ESP32
   COM.begin(COM_SPEED, SERIAL_8N1, COM_RXD, COM_TXD);
 #endif
+#endif
 
+  i2c0.begin();
+  as5600.begin();
 
-  Wire.begin();
-  as5600.begin(AS5600_DIR_PIN);
-  as5600.setDirection(AS5600_CLOCK_WISE);  //  default, just be explicit.
-  DEBUG_printf(FST("# AS5600 Lib Version: %s address: %02X IsConnected: %d\n"), AS5600_LIB_VERSION, as5600.getAddress(), as5600.isConnected());
-
-  if (!as5600.isConnected()) {
-    Wire.end();
-    SPI.begin();
-    mt6701.initializeSSI(MT6701_CS_PIN);
-  }
-  old_angle = get_angle();
+  // if (!as5600.isConnected()) {
+  //   i2c0.end();
+  //   SPI.begin();
+  //   mt6701.initializeSSI(MT6701_CS_PIN);
+  // }
 
   DEBUG_println(FST("# Init complete\n"));
 }
@@ -402,6 +397,9 @@ void loop() {
   static uint32_t s_time = 0;
 
   uint32_t now = millis();
+
+#ifdef COM
+  // Handle Dynamixel communication.
   int r = COM.read();
   while (r != -1) {
     uint8_t c = (uint8_t)r;
@@ -419,32 +417,49 @@ void loop() {
     DEBUG_println(FST("# RX Timeout"));
     rx_index = 0;
   }
+#endif
 
-  // TODO: Read sensors non-blocking and increase update rate.
-  if (now - s_time >= 1000) {
-    s_time = now;
-    uint16_t angle = get_angle();
+  // Handle sensor
+  i2c0.run(now);
+  if (as5600.run(now)) {
+    // New data available.
+    int16_t angle = as5600.getAngle();
+    if (angle != old_angle) { 
+      int pc = reg.position_correction & 0x07FF;
+      if (reg.position_correction & 0x800) { pc = -pc; } // Bit 11 is the sign bit.
+      angle = (angle - pc) & 0x0FFF;
 
-    if (angle < 1024 &&  old_angle > 1024*3) {rotations++;}
-    else if (angle > 1024 * 3 &&  old_angle < 1024) {rotations--;}
-    old_angle = angle;
+      if (angle < 1024 &&  old_angle > 1024*3) {rotations++;}
+      else if (angle > 1024 * 3 &&  old_angle < 1024) {rotations--;}
+      old_angle = angle;
 
-    position = angle + (rotations << 12);
+      position = angle + (rotations << 12);
 
-    reg.current_location = position;
-    if (reg.min_angle != 0 || reg.max_angle != 0) {
-      if (reg.current_location < reg.min_angle) {reg.current_location = reg.min_angle;}
-      if (reg.current_location > reg.max_angle) {reg.current_location = reg.max_angle;}
+      // reg.current_location = position;
+      // if (reg.min_angle != 0 || reg.max_angle != 0) {
+      //   if (reg.current_location < reg.min_angle) {reg.current_location = reg.min_angle;}
+      //   if (reg.current_location > reg.max_angle) {reg.current_location = reg.max_angle;}
+      // }
     }
   }
 
+  static uint32_t ptime = 0;
+  if (now > ptime) {
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    ptime = now + 100; 
+    if (!as5600.isConnected()) { ptime += 400; /* slow blink */}
 
-  // static uint32_t ptime = 0;
-  // if (now - ptime > 100) {
-  //   digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-  //   DEBUG_printf(FST("# Angle: %d  Rotations: %d  Postion: %d Reg: %d\n"), angle, rotations, position, reg.current_location);
-  //   ptime = millis();
-  // } 
+#if SERIAL_DEBUG
+    DEBUG_print(FST("Angle:"));
+    DEBUG_print(as5600.getAngle());
+    DEBUG_print(FST(" Rotations:"));
+    DEBUG_print(as5600.getRotations());
+    DEBUG_print(FST(" Position:"));
+    DEBUG_print(as5600.getPosition());
+    DEBUG_print(FST(" Servo:"));
+    DEBUG_println(pos);
+#endif
+  } 
 }
 
 

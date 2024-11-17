@@ -111,8 +111,8 @@ GPIO_34 - GPIO_39 have no internal pullup / pulldown.
 
 #define LOOP_DELAY 100
 
-#define __PROJECT_NAME__ "SO-Encoder100";
-#define __PROJECT_COMPILE__ "0.2";
+#define __PROJECT_NAME__ "SO-Encoder100"
+#define __PROJECT_VERSION__ "0.2"
 
 #define COM_SPEED 1000000
 
