@@ -468,10 +468,10 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "ch32_encoder_v0.7/",
+      "plot": "stencil",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "ch32_encoder.step",
       "svg": "",
       "vrml": ""
     },
