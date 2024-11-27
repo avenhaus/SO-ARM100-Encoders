@@ -71,6 +71,8 @@ See: [Firmware](Firmware)
 
 ## Off the Shelve Hardware
 
+Instead of using a custom PCB it is also possible to use off the shelve parts. This requires more hand wiring.
+
 ### Magnetic Rotary Encoders
 Currently there are two cheap and popular magnetic encoders on AliExpress, the AS5600 and the MT6701.
 The AS5600 is older, has 12 bit resolution (4096) and supports only I2C. Since the chip has only one hard coded ID, that makes it hard to use when multiple of them are needed.
