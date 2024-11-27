@@ -13,9 +13,63 @@ https://github.com/huggingface/lerobot
 and
 https://github.com/TheRobotStudio/SO-ARM100
 
-It explores to use much cheaper magnetic encoders for the Leader Arm instead of the servos currently used.
+It explores to use much cheaper magnetic encoders for the Leader Arm instead of the regular servos. These dummy servos are also much easier to move manually, as there is no gear train that needs to back drive the servo motor. This makes them ideal for the Leader Arm.
 
-## Hardware
+
+## Custom PCB
+
+<p align="center"><img src="./Images/PCB_Render_GD32_1.png" width="400"><img src="./Images/PCB_Render_GD32_2rt.png" width="400"></p>
+
+
+The custom PCB makes it possible to daisy chain magnetic encoders for much easier wiring. The PCB uses a microcontroller that emulates a FeeTech servo. The dummy servos can be connected to the same servo controller board and no special software is needed.
+
+### Manufacturing
+TODO: JLCPCB
+
+### Cables and Connectors
+
+FeeTech servos use 3-pin 5264 connectors. However, JST XH connectors are more common and pre-made cables are much easier to find. The PCB can be populated with either of the connector types. If JST connectors are used, an adapter needs to be made to connect to the 5264 connector on the controller board. Alternatively one can simply cut off one end from a pre-made cable and solder it directly to the controller board.
+
+The dummy servos use very little current. So any gauge wire should be ok. However, if they are to be mixed with real servos on the same bus, wire gauge needs to be taken into consideration.
+
+The servos use "reverse double head" cables (pin 1 connected to pin 1, etc.) although in a pinch it's also possible to switch the terminals on "same side' cables yourself.
+
+JST XH: https://www.aliexpress.us/w/wholesale-JST-XH-3.html
+JST XH cables: https://www.aliexpress.us/w/wholesale-xh-double-head.html
+
+5264: https://www.aliexpress.us/w/wholesale-5264.html
+5264 cables: https://www.aliexpress.us/w/wholesale-5264-double-head.html https://www.aliexpress.us/item/3256806128255434.html
+
+
+
+### Magnets
+
+Normally magnetic encoders use special, radially magnetized magnets.
+
+Magnets https://www.aliexpress.us/w/wholesale-encoder-magnets.htm
+
+However, it is also possible to use the regular, axially magnetized 6x3 disk magnets which are cheaper. They just have to be oriented sideways. Print the corresponding servo horn instead. N35 magnets are fine. Nothing fancy is needed.
+
+https://www.amazon.com/s?k=6x3mm+magnet
+https://www.aliexpress.us/w/wholesale-6x3-magnet.html
+
+<img src="./Images/Magnet_Options.jpg" width="400">
+
+### Firmware Programming
+
+See: [Firmware](Firmware)
+
+### 3D Printed Servo Housing
+
+<p align="center">
+<img src="./Images/3D_Model_2.png" width="400"> 
+<img src="./Images/3D_Model_3.png" width="400"></p>
+<p align="center">
+<img src="./Images/Open_Custom_PVB_Servo_1.jpg" width="400">
+<img src="./Images/Open_Custom_PCB_Servo_2.jpg" width="400"></p>
+
+
+## Off the Shelve Hardware
 
 ### Magnetic Rotary Encoders
 Currently there are two cheap and popular magnetic encoders on AliExpress, the AS5600 and the MT6701.

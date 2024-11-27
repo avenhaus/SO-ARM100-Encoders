@@ -59,7 +59,7 @@ PROGMEM const servo_reg_t default_data = {
   0,     // res1
   9,     // servo_minor
   3,     // servo_major
-  2,     // id
+  1,     // id
   0,     // baudrate
   0,     // return_delay
   1,     // status_level
@@ -433,9 +433,11 @@ void loop() {
       else if (angle > 1024 * 3 &&  old_angle < 1024) {rotations--;}
       old_angle = angle;
 
-      position = angle + (rotations << 12);
+      position = (int32_t)angle + (rotations << 12);
 
-      // reg.current_location = position;
+      if (position < 0) {reg.current_location = (-position) | 0x8000;}
+      else {reg.current_location = position;}
+      
       // if (reg.min_angle != 0 || reg.max_angle != 0) {
       //   if (reg.current_location < reg.min_angle) {reg.current_location = reg.min_angle;}
       //   if (reg.current_location > reg.max_angle) {reg.current_location = reg.max_angle;}
@@ -457,7 +459,7 @@ void loop() {
     DEBUG_print(FST(" Position:"));
     DEBUG_print(as5600.getPosition());
     DEBUG_print(FST(" Servo:"));
-    DEBUG_println(pos);
+    DEBUG_println(reg.current_location);
 #endif
   } 
 }
