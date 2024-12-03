@@ -136,6 +136,8 @@ extern const char COMPILE_TIME[] PROGMEM;
  * Servo Registers
 \* ============================================== */
 
+#define DEFAULT_ID 1
+
 typedef struct __attribute__((packed)) servo_reg_t {
 uint8_t firmware_major;  //  0	0x00	Firmware major version number	1	3	EPROM	read only	-1	-1		
 uint8_t firmware_minor;  //  1	0x01	Firmware minor version number	1	7	EPROM	read only	-1	-1		

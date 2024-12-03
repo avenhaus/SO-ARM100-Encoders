@@ -32,13 +32,13 @@ Monitor:
 #include <Arduino.h>
 
 #include "Config.h"
-#include <SPI.h>
 #ifdef GD32F1
 // Somehow EEPROM.h does not find this if not included first.
 #include <FlashStorage.h>
 #endif
 #include <EEPROM.h>
 
+// #include <SPI.h>
 // #include "MT6701.h"
 
 #include "i2c.h"
@@ -59,7 +59,7 @@ PROGMEM const servo_reg_t default_data = {
   0,     // res1
   9,     // servo_minor
   3,     // servo_major
-  1,     // id
+  DEFAULT_ID,     // id
   0,     // baudrate
   0,     // return_delay
   1,     // status_level
@@ -144,15 +144,18 @@ void debug_hex(const uint8_t* data, uint16_t len) {
   }
 }
 
+
 /***********************************************************\
  * Save Registers to EEPROM
 \***********************************************************/
 void save_eeprom() {
   eeprom_data.magic = EEPROM_MAGIC;
 #ifdef GD32F1
+#ifndef ARDUINO_GENERIC_F130F4PX
   EEPROM.begin();
   EEPROM.put(0, eeprom_data);
   EEPROM.commit();
+#endif
 #endif
 #ifdef ESP32
   EEPROM.begin(EEPROM_SIZE);
@@ -340,6 +343,10 @@ void setup() {
   DEBUG_println(FST("\n\n# " __PROJECT_NAME__  " " __PROJECT_VERSION__ " " __DATE__ " " __TIME__));
 #endif
 
+#ifdef ARDUINO_GENERIC_F130F4PX
+    memcpy(&eeprom_data.registers, &default_data, sizeof(default_data));
+#else
+
 #ifdef GD32F1
   EEPROM.begin();
   EEPROM.get(0, eeprom_data);
@@ -363,6 +370,7 @@ void setup() {
 #endif
     memcpy(&eeprom_data.registers, &default_data, sizeof(default_data));
   }
+#endif
 
 #ifdef COM
 #ifdef GD32F1
