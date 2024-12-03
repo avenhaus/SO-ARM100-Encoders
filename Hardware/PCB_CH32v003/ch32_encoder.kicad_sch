@@ -4235,7 +4235,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "MT6701CT"
+		(property "Value" "MT6701CT or AS5600"
 			(at 93.6341 52.07 0)
 			(effects
 				(font
@@ -5669,7 +5669,7 @@
 				)
 			)
 		)
-		(property "Value" "XC6206PxxxMR"
+		(property "Value" "HT7533S"
 			(at 241.3 22.86 0)
 			(effects
 				(font
