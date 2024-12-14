@@ -27,6 +27,15 @@ Monitor:
  47: FF FF 01 04 02 38 11 AF FF FF 01 13 00 FC 07 00 00 28 04 45 19 00 00 00 00 08 00 00 00 00 56
  47: FF FF 01 04 02 38 11 AF FF FF 01 13 00 FC 07 00 00 28 04 45 19 00 00 00 00 08 01 00 00 00 55
 
+
+ STS3215 Position Offset Experiments
+======================================
+// Position 1310 , Offset 300 => 1010
+// Position 1310 , Offset -300 => 1010  !! UI Bug with bit 11 as sign??
+// Position 1310 , Offset 300 + 2048 => UI Error: cannot set more than 2048 (UI bug?)
+// Position 1311 , Torque Switch 128 => Offset: 2785 (2785 is -737) => 2048 (This value cannot be set from UI)
+// Position 2502 , Torque Switch 128 => Offset: 454 => 2048
+// Position limits are ignored when moving the motor manually. No negative positions. Wrap at 4095.
 */
 
 #include <Arduino.h>
@@ -133,9 +142,11 @@ uint8_t ignore = 0;  // Ignore this many RX bytes. (What we just sent out.)
 I2C i2c0(0, SDA, SCL, 1000000);
 AS5600_NB as5600(i2c0, AS5600_DIR_PIN);  
 
-uint16_t old_angle = 0;
+int16_t angle = 0;
+int16_t old_angle = 0;
 int32_t rotations = 0;
 int32_t position = 0;
+uint32_t last_data_ts = 0;
 
 void debug_hex(const uint8_t* data, uint16_t len) {
   for (int i = 0; i < len; i++) {
@@ -175,8 +186,18 @@ void write_cmd(uint8_t addr, uint8_t len, const uint8_t* data) {
   uint8_t header[] = {0xFF, 0xFF, reg.id, 2, error};
 
   // Save the data to the registers.
-  for (size_t i = 0; i < len; i++) {reg_data[addr+i] = data[i];}
-  
+  for (size_t i = 0; i < len; i++) {
+    if (addr + i == 40 && data[i] == 128) {
+      // Set Center Position
+      int16_t pc = angle -2048;
+      if (pc < 0) { pc = -pc; pc |= 0x800; }
+      reg.position_correction = pc;
+      rotations = 0;
+    } else {
+        reg_data[addr+i] = data[i];
+    }
+  }
+
   // Calculate the CRC.
   uint8_t crc = 0;
   for (int i = PACKET_ID; i < sizeof(header); i++) {crc += header[i]; }
@@ -431,33 +452,35 @@ void loop() {
   i2c0.run(now);
   if (as5600.run(now)) {
     // New data available.
-    int16_t angle = as5600.getAngle();
+    last_data_ts = now;
+    angle = as5600.getAngle();
     if (angle != old_angle) { 
-      int pc = reg.position_correction & 0x07FF;
-      if (reg.position_correction & 0x800) { pc = -pc; } // Bit 11 is the sign bit.
-      angle = (angle - pc) & 0x0FFF;
-
       if (angle < 1024 &&  old_angle > 1024*3) {rotations++;}
       else if (angle > 1024 * 3 &&  old_angle < 1024) {rotations--;}
       old_angle = angle;
-
-      position = (int32_t)angle + (rotations << 12);
-
-      if (position < 0) {reg.current_location = (-position) | 0x8000;}
-      else {reg.current_location = position;}
-      
-      // if (reg.min_angle != 0 || reg.max_angle != 0) {
-      //   if (reg.current_location < reg.min_angle) {reg.current_location = reg.min_angle;}
-      //   if (reg.current_location > reg.max_angle) {reg.current_location = reg.max_angle;}
-      // }
     }
+
+    int pc = reg.position_correction & 0x07FF;
+    if (reg.position_correction & 0x800) { pc = -pc; } // Bit 11 is the sign bit.
+
+    position = (int32_t)((angle - pc) & 0x0FFF) + (rotations << 12);
+
+    if (reg.max_angle == 0 && reg.min_angle == 0) {
+      // Multi Rotations Enabled
+      if (position < 0) {position = (-position) | 0x8000;}
+    } else {
+      position &= 0x0FFF;
+      // if (position < reg.min_angle) {position = reg.min_angle;}
+      // if (position > reg.max_angle) {position = reg.max_angle;}
+    }
+    reg.current_location = position;
   }
 
   static uint32_t ptime = 0;
   if (now > ptime) {
     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
     ptime = now + 100; 
-    if (!as5600.isConnected()) { ptime += 400; /* slow blink */}
+    if (!as5600.isConnected() || (now > last_data_ts+100) ) { ptime += 900; /* slow blink */}
 
 #if SERIAL_DEBUG
     DEBUG_print(FST("Angle:"));
