@@ -137,10 +137,10 @@ uint8_t rx_index = 0;
 uint32_t last_rx_ts = 0;
 uint8_t ignore = 0;  // Ignore this many RX bytes. (What we just sent out.)
 
-uint8_t bulk_read_after_id = 0;
-uint8_t bulk_read_addr = 0;
-uint8_t bulk_read_len = 0;
-uint32_t bulk_read_timeout = 0;
+uint8_t sb_read_after_id = 0;
+uint8_t sb_read_addr = 0;
+uint8_t sb_read_len = 0;
+uint32_t sb_read_timeout = 0;
 
 // MT6701 mt6701;
 
@@ -278,11 +278,44 @@ void read_cmd(uint8_t addr, uint8_t len) {
 #endif
 }
 
+
+/***********************************************************\
+ * Sync Read from registers
+\***********************************************************/
+// TODO: Buffer data so that data from all servos is read at the exact same time?
+void sync_read_cmd(uint8_t* packet) {
+  uint8_t n = rx_buffer[PACKET_LENGTH] - 4;
+  uint8_t* ptr = packet + 7;
+
+  // Check if own ID is first.
+  if (ptr[0] == reg.id) {
+    DEBUG_println(FST("# Sync Read: Own ID is first."));
+    return read_cmd(rx_buffer[PACKET_ADDR], rx_buffer[PACKET_LEN]);
+  }
+
+  // Check if own ID is in the rest of the list.
+  uint8_t after_id = ptr[0];
+  for (uint8_t i = 1; i < n; i++) {
+    if (ptr[i] == reg.id) {
+      // Wait until after servo with ID after_id responds.
+      sb_read_after_id = after_id;
+      sb_read_addr = rx_buffer[PACKET_ADDR];
+      sb_read_len = rx_buffer[PACKET_LEN];
+      sb_read_timeout = millis() + 1000;
+      DEBUG_print(FST("# Sync Read: Own ID after: "));
+      DEBUG_println(after_id);
+      return;
+    }
+    after_id = ptr[i+1];
+  }
+}
+
+
 /***********************************************************\
  * Bulk Read from registers
 \***********************************************************/
 void bulk_read_cmd(uint8_t* packet) {
-  uint8_t n = rx_buffer[PACKET_LEN] - 3;
+  uint8_t n = rx_buffer[PACKET_LENGTH] - 3;
   uint8_t* ptr = packet + 6;
 
   // Check if own ID is first.
@@ -296,10 +329,10 @@ void bulk_read_cmd(uint8_t* packet) {
   for (uint8_t i = 3; i < n; i+=3) {
     if (ptr[i+1] == reg.id) {
       // Wait until after servo with ID after_id responds.
-      bulk_read_after_id = after_id;
-      bulk_read_addr = ptr[i+2];
-      bulk_read_len = ptr[i];
-      bulk_read_timeout = millis() + 1000;
+      sb_read_after_id = after_id;
+      sb_read_addr = ptr[i+2];
+      sb_read_len = ptr[i];
+      sb_read_timeout = millis() + 1000;
       DEBUG_print(FST("# Bulk Read: Own ID after: "));
       DEBUG_println(after_id);
       return;
@@ -367,6 +400,11 @@ void execute_command() {
       { int a = 0; int b = 42 / a; }  // Crash
       break;
 
+    case 0x82: // Sync Read
+      DEBUG_print(FST("# Sync Read\n"));
+      sync_read_cmd(rx_buffer);
+      break;
+
     case 0x83: // Sync Write
       DEBUG_print(FST("# Sync Write\n"));
       break;
@@ -406,7 +444,7 @@ void parse_rx_data(uint8_t c) {
 
   if (rx_index > 5 && rx_buffer[PACKET_LENGTH]+4 == rx_index) { // Full packet received.
     rx_index = 0;
-    if(rx_buffer[PACKET_ID] != reg.id && rx_buffer[PACKET_ID] != 0xFE && bulk_read_after_id == 0) { 
+    if(rx_buffer[PACKET_ID] != reg.id && rx_buffer[PACKET_ID] != 0xFE && sb_read_after_id == 0) { 
       // DEBUG_printf(FST("\n# Wrong ID: %02X, Length: %02X, Instruction: %02X\n"), rx_buffer[PACKET_ID], rx_buffer[PACKET_LENGTH], rx_buffer[PACKET_INSTRUCTION]);
       rx_index = 0;
       return;
@@ -427,22 +465,24 @@ void parse_rx_data(uint8_t c) {
       return;
     }
 
-    if (rx_buffer[PACKET_ID] == 0xFE && rx_buffer[PACKET_INSTRUCTION] != 0x92) {
+    if (rx_buffer[PACKET_ID] == 0xFE 
+          && rx_buffer[PACKET_INSTRUCTION] != 0x82 
+          && rx_buffer[PACKET_INSTRUCTION] != 0x92) {
       DEBUG_print(FST("\n# Unsupported broadcast CMD: "));
       DEBUG_println(rx_buffer[PACKET_INSTRUCTION], HEX);
       return;
     }
 
-    if (bulk_read_after_id) {
-      DEBUG_print(FST("\n# Bulk Read got response from ID: "));
+    if (sb_read_after_id) {
+      DEBUG_print(FST("\n# Sync/Bulk Read got response from ID: "));
       DEBUG_println(rx_buffer[PACKET_ID]);
-      if (rx_buffer[PACKET_ID] == bulk_read_after_id) {
-        DEBUG_println(FST("\n# Bulk Read got response from After ID"));
-        read_cmd(bulk_read_addr, bulk_read_len);
-        bulk_read_after_id = 0;
-        bulk_read_addr = 0;
-        bulk_read_len = 0;
-        bulk_read_timeout = 0;
+      if (rx_buffer[PACKET_ID] == sb_read_after_id) {
+        DEBUG_println(FST("\n# Sync/Bulk Read got response from After ID"));
+        read_cmd(sb_read_addr, sb_read_len);
+        sb_read_after_id = 0;
+        sb_read_addr = 0;
+        sb_read_len = 0;
+        sb_read_timeout = 0;
       }
       return;
     }
@@ -549,10 +589,10 @@ void loop() {
     rx_index = 0;
   }
 
-  if (bulk_read_after_id && now > bulk_read_timeout) {
-    DEBUG_print(FST("# Bulk Read: Timeout. After ID: "));
-    DEBUG_println(bulk_read_after_id);
-    bulk_read_after_id = 0;
+  if (sb_read_after_id && now > sb_read_timeout) {
+    DEBUG_print(FST("# Sync/Bulk Read: Timeout. After ID: "));
+    DEBUG_println(sb_read_after_id);
+    sb_read_after_id = 0;
   }
 #endif
 
