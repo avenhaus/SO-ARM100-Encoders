@@ -2,6 +2,10 @@
 https://emanual.robotis.com/docs/en/dxl/protocol1/
 https://www.theremino.com/wp-content/uploads/files/SmartMotors/Feetech_Motors_Programming_ENG.pdf
 
+FeeTech Documentation:
+https://www.feetechrc.com/letter-of-agreement.html
+https://www.feetechrc.com/Data/feetechrc/upload/file/20240702/%E8%88%B5%E6%9C%BA%E5%8D%8F%E8%AE%AE%E6%89%8B%E5%86%8C-%E7%A3%81%E7%BC%96%E7%A0%81%E7%89%88%E6%9C%AC.pdf
+
 https://download.kamami.pl/p1181056-ST3215_Servo_User_Manual.pdf
 https://www.waveshare.com/w/upload/f/f4/ST3215_Servo_User_Manual.pdf
 https://www.waveshare.com/wiki/ST3215_Servo
@@ -52,6 +56,19 @@ Monitor:
 
 #include "i2c.h"
 #include "AS5600_NB.h"
+
+#define DXL_BROADCAST_ID 0xFE
+
+#define DXL_PING_CMD 0x01
+#define DXL_READ_CMD 0x02
+#define DXL_WRITE_CMD 0x03
+#define DXL_REG_WRITE_CMD 0x04
+#define DXL_ACTION_CMD 0x05
+#define DXL_FACTORY_RESET_CMD 0x06
+#define DXL_REBOOT_CMD 0x08
+#define DXL_SYNC_READ_CMD 0x82
+#define DXL_SYNC_WRITE_CMD 0x83
+#define DXL_BULK_READ_CMD 0x92
 
 
 PROGMEM const char EMPTY_STRING[] =  "";
@@ -349,12 +366,12 @@ void bulk_read_cmd(uint8_t* packet) {
 void execute_command() {
   uint8_t instruction = rx_buffer[PACKET_INSTRUCTION];
   switch(instruction) {
-    case 0x01: // Ping
+    case DXL_PING_CMD: // Ping
       DEBUG_print(FST("# Ping\n"));
       ping_cmd();
       break;
 
-    case 0x02: // Read
+    case DXL_READ_CMD: // Read
       {
         uint8_t addr = rx_buffer[PACKET_ADDR]; 
         uint8_t len = rx_buffer[PACKET_LEN];
@@ -363,7 +380,7 @@ void execute_command() {
       }
       break;
 
-    case 0x03: // Write
+    case DXL_WRITE_CMD: // Write
       {
         uint8_t addr = rx_buffer[PACKET_ADDR]; 
         uint8_t len = rx_buffer[PACKET_LENGTH]-3;
@@ -378,19 +395,19 @@ void execute_command() {
       }
       break;
 
-    case 0x04: // Reg Write
+    case DXL_REG_WRITE_CMD: // Reg Write
       DEBUG_print(FST("# Reg Write\n"));
       break;
 
-    case 0x05: // Action
+    case DXL_ACTION_CMD: // Action
       DEBUG_print(FST("# Action\n"));
       break;
 
-    case 0x06: // Factory Reset
+    case DXL_FACTORY_RESET_CMD: // Factory Reset
       DEBUG_print(FST("# Factory Reset\n"));
       break;
 
-    case 0x08: // Reboot
+    case DXL_REBOOT_CMD: // Reboot
       DEBUG_print(FST("# Reboot\n"));
       ping_cmd();
 #ifdef COM
@@ -400,16 +417,16 @@ void execute_command() {
       { int a = 0; int b = 42 / a; }  // Crash
       break;
 
-    case 0x82: // Sync Read
+    case DXL_SYNC_READ_CMD: // Sync Read
       DEBUG_print(FST("# Sync Read\n"));
       sync_read_cmd(rx_buffer);
       break;
 
-    case 0x83: // Sync Write
+    case DXL_SYNC_WRITE_CMD: // Sync Write
       DEBUG_print(FST("# Sync Write\n"));
       break;
 
-    case 0x92: // Bulk Read
+    case DXL_BULK_READ_CMD: // Bulk Read
       DEBUG_print(FST("# Bulk Read\n"));
       bulk_read_cmd(rx_buffer);
       break;
@@ -444,7 +461,9 @@ void parse_rx_data(uint8_t c) {
 
   if (rx_index > 5 && rx_buffer[PACKET_LENGTH]+4 == rx_index) { // Full packet received.
     rx_index = 0;
-    if(rx_buffer[PACKET_ID] != reg.id && rx_buffer[PACKET_ID] != 0xFE && sb_read_after_id == 0) { 
+    if(rx_buffer[PACKET_ID] != reg.id 
+        && rx_buffer[PACKET_ID] != DXL_BROADCAST_ID 
+        && sb_read_after_id == 0) { 
       // DEBUG_printf(FST("\n# Wrong ID: %02X, Length: %02X, Instruction: %02X\n"), rx_buffer[PACKET_ID], rx_buffer[PACKET_LENGTH], rx_buffer[PACKET_INSTRUCTION]);
       rx_index = 0;
       return;
@@ -465,9 +484,9 @@ void parse_rx_data(uint8_t c) {
       return;
     }
 
-    if (rx_buffer[PACKET_ID] == 0xFE 
-          && rx_buffer[PACKET_INSTRUCTION] != 0x82 
-          && rx_buffer[PACKET_INSTRUCTION] != 0x92) {
+    if (rx_buffer[PACKET_ID] == DXL_BROADCAST_ID 
+          && rx_buffer[PACKET_INSTRUCTION] != DXL_SYNC_READ_CMD 
+          && rx_buffer[PACKET_INSTRUCTION] != DXL_BULK_READ_CMD) {
       DEBUG_print(FST("\n# Unsupported broadcast CMD: "));
       DEBUG_println(rx_buffer[PACKET_INSTRUCTION], HEX);
       return;
