@@ -323,7 +323,7 @@ void sync_read_cmd(uint8_t* packet) {
       DEBUG_println(after_id);
       return;
     }
-    after_id = ptr[i+1];
+    after_id = ptr[i];
   }
 }
 
@@ -465,7 +465,6 @@ void parse_rx_data(uint8_t c) {
         && rx_buffer[PACKET_ID] != DXL_BROADCAST_ID 
         && sb_read_after_id == 0) { 
       // DEBUG_printf(FST("\n# Wrong ID: %02X, Length: %02X, Instruction: %02X\n"), rx_buffer[PACKET_ID], rx_buffer[PACKET_LENGTH], rx_buffer[PACKET_INSTRUCTION]);
-      rx_index = 0;
       return;
     }
 
